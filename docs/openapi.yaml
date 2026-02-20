@@ -1,0 +1,367 @@
+---
+openapi: 3.1.0
+
+info:
+  title: Food Inventory API
+  version: 1.0.0
+  description: |
+    Backend API for the Food Inventory home warehouse tool.
+
+    Products are identified by EAN-8 or EAN-13 barcodes. On first use of an EAN,
+    product metadata is resolved from the Open Food Facts API and cached in the
+    local database. Subsequent calls for the same EAN are served from the cache.
+
+    ## Core flows
+
+    **Add a product**
+    `POST /inventory` → backend resolves EAN (cache or Open Food Facts) → creates
+    or increments the inventory entry.
+
+    **Remove a product**
+    `DELETE /inventory/{ean}` → decrements quantity by 1 → deletes the entry when
+    quantity reaches 0.
+
+    **Alerts**
+    `GET /alerts` → computed on demand from the current inventory; no background
+    jobs required.
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: inventory
+    description: Manage the current stock of products
+  - name: alerts
+    description: Active low-stock and expiry warnings (read-only, computed on demand)
+  - name: settings
+    description: Global application settings
+
+paths:
+
+  # ---------------------------------------------------------------------------
+  # Inventory
+  # ---------------------------------------------------------------------------
+
+  /inventory:
+    get:
+      tags: [inventory]
+      summary: List all inventory entries
+      operationId: listInventory
+      responses:
+        '200':
+          description: Full inventory list, ordered by product name
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryEntry'
+              example:
+                - id: 1
+                  product:
+                    ean: '4006381333931'
+                    name: Barilla Spaghetti No. 5
+                    category: en:pasta
+                    image_url: https://images.openfoodfacts.org/images/products/400/638/133/3931/front_en.jpg
+                  quantity: 3
+                  expiry_date: '2026-06-30'
+                  low_stock_threshold: 2
+
+    post:
+      tags: [inventory]
+      summary: Add or increment a product by EAN
+      description: |
+        Looks up the EAN in the local product cache. On a cache miss, queries the
+        Open Food Facts API and stores the result.
+
+        - If the product is **not yet** in the inventory → creates a new entry with
+          `quantity = 1` and the provided `expiry_date` (if any). Returns **201**.
+        - If the product is **already** in the inventory → increments `quantity` by 1.
+          The `expiry_date` field on an existing entry is **not** updated. Returns **200**.
+
+        Returns **404** when the EAN cannot be resolved (unknown product).
+      operationId: addProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddProductRequest'
+            example:
+              ean: '4006381333931'
+              expiry_date: '2026-06-30'
+      responses:
+        '200':
+          description: Existing inventory entry — quantity incremented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryEntry'
+        '201':
+          description: New inventory entry created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryEntry'
+        '404':
+          description: EAN not found in Open Food Facts or local cache
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: PRODUCT_NOT_FOUND
+                message: No product found for EAN 4006381333931
+        '422':
+          description: Invalid EAN format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: INVALID_EAN
+                message: EAN must be 8 or 13 digits
+
+  /inventory/{ean}:
+    delete:
+      tags: [inventory]
+      summary: Decrement or remove a product
+      description: |
+        Decrements the product's quantity by 1.
+
+        - If the resulting quantity is **> 0** → returns the updated entry with **200**.
+        - If the resulting quantity is **0** → deletes the inventory entry and returns **204**.
+      operationId: removeProduct
+      parameters:
+        - $ref: '#/components/parameters/EanPath'
+      responses:
+        '200':
+          description: Quantity decremented — updated entry returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryEntry'
+        '204':
+          description: Entry removed (quantity reached 0)
+        '404':
+          description: Product not found in inventory
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: INVENTORY_ENTRY_NOT_FOUND
+                message: No inventory entry for EAN 4006381333931
+
+  # ---------------------------------------------------------------------------
+  # Alerts
+  # ---------------------------------------------------------------------------
+
+  /alerts:
+    get:
+      tags: [alerts]
+      summary: Get active alerts
+      description: |
+        Returns all active alerts computed from the current inventory state:
+
+        - **low_stock** — `quantity <= low_stock_threshold` for that entry
+        - **expiry_soon** — `expiry_date` is set and falls within the configured
+          `expiry_warning_days` window (see `GET /settings`)
+
+        Alerts are read-only and have no side effects on inventory.
+      operationId: listAlerts
+      responses:
+        '200':
+          description: Active alerts (empty array when none)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+              example:
+                - type: low_stock
+                  ean: '4006381333931'
+                  product_name: Barilla Spaghetti No. 5
+                  detail: 'Only 1 item left (threshold: 2)'
+                - type: expiry_soon
+                  ean: '5449000000996'
+                  product_name: Coca-Cola 1.5L
+                  detail: Expires in 3 days (2026-02-23)
+
+  # ---------------------------------------------------------------------------
+  # Settings
+  # ---------------------------------------------------------------------------
+
+  /settings:
+    get:
+      tags: [settings]
+      summary: Get application settings
+      operationId: getSettings
+      responses:
+        '200':
+          description: Current settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+
+    patch:
+      tags: [settings]
+      summary: Update application settings
+      operationId: updateSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Settings'
+            example:
+              expiry_warning_days: 14
+      responses:
+        '200':
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+        '422':
+          description: Invalid setting values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: INVALID_SETTINGS
+                message: expiry_warning_days must be >= 1
+
+# -----------------------------------------------------------------------------
+# Reusable components
+# -----------------------------------------------------------------------------
+
+components:
+
+  parameters:
+    EanPath:
+      name: ean
+      in: path
+      required: true
+      description: EAN-8 or EAN-13 barcode
+      schema:
+        $ref: '#/components/schemas/EAN'
+
+  schemas:
+
+    EAN:
+      type: string
+      description: EAN-8 (8 digits) or EAN-13 (13 digits) barcode
+      pattern: '^\d{8}(\d{5})?$'
+      examples:
+        - '4006381333931'
+        - '01234565'
+
+    Product:
+      type: object
+      description: Product metadata resolved from Open Food Facts and cached locally
+      required: [ean, name]
+      properties:
+        ean:
+          $ref: '#/components/schemas/EAN'
+        name:
+          type: string
+          example: Barilla Spaghetti No. 5
+        category:
+          type: [string, 'null']
+          description: First category tag from Open Food Facts
+          example: en:pasta
+        image_url:
+          type: [string, 'null']
+          format: uri
+          example: https://images.openfoodfacts.org/images/products/400/638/133/3931/front_en.jpg
+
+    InventoryEntry:
+      type: object
+      required: [id, product, quantity, low_stock_threshold]
+      properties:
+        id:
+          type: integer
+          description: Internal surrogate key
+          example: 1
+        product:
+          $ref: '#/components/schemas/Product'
+        quantity:
+          type: integer
+          minimum: 1
+          description: Current number of units in stock
+          example: 3
+        expiry_date:
+          type: [string, 'null']
+          format: date
+          description: Expiry date recorded when the product was first added
+          example: '2026-06-30'
+        low_stock_threshold:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Quantity at or below which a low_stock alert is triggered
+          example: 2
+
+    AddProductRequest:
+      type: object
+      required: [ean]
+      properties:
+        ean:
+          $ref: '#/components/schemas/EAN'
+        expiry_date:
+          type: [string, 'null']
+          format: date
+          description: |
+            Optional expiry date. Stored only when a **new** inventory entry is
+            created; ignored when incrementing an existing entry.
+          example: '2026-06-30'
+
+    Alert:
+      type: object
+      required: [type, ean, product_name, detail]
+      properties:
+        type:
+          type: string
+          enum: [low_stock, expiry_soon]
+          description: |
+            - `low_stock` — quantity at or below the entry's `low_stock_threshold`
+            - `expiry_soon` — expiry date is within the `expiry_warning_days` window
+        ean:
+          $ref: '#/components/schemas/EAN'
+        product_name:
+          type: string
+          example: Barilla Spaghetti No. 5
+        detail:
+          type: string
+          description: Human-readable description of the alert condition
+          example: 'Only 1 item left (threshold: 2)'
+
+    Settings:
+      type: object
+      properties:
+        expiry_warning_days:
+          type: integer
+          minimum: 1
+          default: 7
+          description: |
+            Number of days before a product's expiry date at which an
+            `expiry_soon` alert is triggered.
+          example: 7
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code
+          example: PRODUCT_NOT_FOUND
+        message:
+          type: string
+          description: Human-readable error description
+          example: No product found for EAN 4006381333931
