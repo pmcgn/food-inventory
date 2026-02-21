@@ -8,7 +8,7 @@
   let loading = true;
 
   // Scanner + add-product modal state
-  let showScanner = false;
+  let scanMode: 'add' | 'remove' | null = null;
   let showAddModal = false;
   let scannedEAN = '';
   let expiryDate = '';
@@ -16,6 +16,20 @@
 
   // Remove confirmation state
   let removingEAN: string | null = null;
+
+  // Search
+  let searchQuery = '';
+
+  $: filteredItems = searchQuery.trim()
+    ? items.filter(e => {
+        const q = searchQuery.toLowerCase();
+        return (
+          e.product.ean.toLowerCase().includes(q) ||
+          e.product.name.toLowerCase().includes(q) ||
+          (e.product.category ?? '').toLowerCase().includes(q)
+        );
+      })
+    : items;
 
   onMount(loadInventory);
 
@@ -30,11 +44,17 @@
     }
   }
 
-  function onScan(event: CustomEvent<string>) {
-    scannedEAN = event.detail;
-    expiryDate = '';
-    showScanner = false;
-    showAddModal = true;
+  async function onScan(event: CustomEvent<string>) {
+    const ean = event.detail;
+    const mode = scanMode;
+    scanMode = null;
+    if (mode === 'remove') {
+      await removeProduct(ean);
+    } else {
+      scannedEAN = ean;
+      expiryDate = '';
+      showAddModal = true;
+    }
   }
 
   async function addProduct() {
@@ -90,7 +110,28 @@
 
 <div class="page-header">
   <h1>Inventory</h1>
-  <span class="item-count">{items.length} item{items.length !== 1 ? 's' : ''}</span>
+  <span class="item-count">
+    {#if searchQuery.trim() && filteredItems.length !== items.length}
+      {filteredItems.length} of {items.length}
+    {:else}
+      {items.length}
+    {/if}
+    item{items.length !== 1 ? 's' : ''}
+  </span>
+</div>
+
+<div class="search-wrap">
+  <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+       stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+  </svg>
+  <input
+    class="search-input"
+    type="search"
+    placeholder="Search by name, EAN or category…"
+    bind:value={searchQuery}
+    aria-label="Search inventory"
+  />
 </div>
 
 {#if loading}
@@ -105,9 +146,13 @@
     </svg>
     <p>Your inventory is empty.<br/>Tap the button below to scan a product.</p>
   </div>
+{:else if filteredItems.length === 0}
+  <div class="empty">
+    <p>No items match "<strong>{searchQuery}</strong>".</p>
+  </div>
 {:else}
   <ul class="item-list">
-    {#each items as entry (entry.id)}
+    {#each filteredItems as entry (entry.id)}
       {@const lowStock = isLowStock(entry)}
       {@const expirySoon = isExpirySoon(entry)}
       <li class="card item-card" class:warn-low={lowStock} class:warn-expiry={expirySoon}>
@@ -164,18 +209,25 @@
   </ul>
 {/if}
 
-<!-- FAB: open scanner -->
-<button class="fab" on:click={() => (showScanner = true)} aria-label="Scan barcode to add product">
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
-       stroke="currentColor" stroke-width="2" stroke-linecap="round">
-    <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
-    <rect x="7" y="7" width="10" height="10" rx="1"/>
-  </svg>
-</button>
+<!-- Scan action buttons -->
+<div class="scan-actions">
+  <button class="scan-btn scan-btn--add" on:click={() => (scanMode = 'add')} aria-label="Scan barcode to add product">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+      <path d="M12 5v14M5 12h14"/>
+    </svg>
+  </button>
+  <button class="scan-btn scan-btn--remove" on:click={() => (scanMode = 'remove')} aria-label="Scan barcode to remove product">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+      <path d="M5 12h14"/>
+    </svg>
+  </button>
+</div>
 
 <!-- Barcode scanner overlay -->
-{#if showScanner}
-  <BarcodeScanner on:scan={onScan} on:cancel={() => (showScanner = false)} />
+{#if scanMode !== null}
+  <BarcodeScanner on:scan={onScan} on:cancel={() => (scanMode = null)} />
 {/if}
 
 <!-- Add-product bottom sheet -->
@@ -216,6 +268,32 @@
     font-size: .85rem;
     color: var(--c-muted);
     font-weight: 500;
+  }
+
+  .search-wrap {
+    position: relative;
+    margin-bottom: 12px;
+  }
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--c-muted);
+    pointer-events: none;
+  }
+  .search-input {
+    width: 100%;
+    padding: 10px 12px 10px 36px;
+    border-radius: 10px;
+    border: 1px solid var(--c-border, #e0e0e0);
+    background: var(--c-surface, #fff);
+    font-size: .95rem;
+    box-sizing: border-box;
+  }
+  .search-input:focus {
+    outline: none;
+    border-color: var(--c-primary, #4caf50);
   }
 
   .item-list {
@@ -318,4 +396,32 @@
   }
   .remove-btn:hover   { background: var(--c-danger); color: #fff; }
   .remove-btn:disabled { opacity: .4; pointer-events: none; }
+
+  .scan-actions {
+    position: fixed;
+    bottom: 5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: row;
+    gap: 1.25rem;
+  }
+
+  .scan-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: filter .15s;
+  }
+  .scan-btn:hover { filter: brightness(1.1); }
+
+  .scan-btn--add    { background: #4caf50; }
+  .scan-btn--remove { background: #f44336; }
 </style>
