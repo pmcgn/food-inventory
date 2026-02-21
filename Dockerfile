@@ -10,13 +10,15 @@ RUN npm run build
 # Stage 2: build backend (embeds the frontend build)
 FROM golang:1.22-alpine AS backend-build
 
+ARG VERSION=dev
+
 WORKDIR /app
 COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 COPY backend/ .
 # Copy the frontend build into the embed path before compiling
 COPY --from=frontend-build /app/build ./cmd/server/ui
-RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-X main.version=${VERSION}" -o server ./cmd/server
 
 # Stage 3: minimal runtime image
 FROM alpine:3.21

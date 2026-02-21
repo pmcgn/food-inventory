@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Food Inventory logo">
+  <title>Food Inventory</title>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#1b4332"/>
+      <stop offset="100%" stop-color="#081c15"/>
+    </linearGradient>
+    <linearGradient id="leafL" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#52b788"/>
+      <stop offset="100%" stop-color="#40916c"/>
+    </linearGradient>
+    <linearGradient id="leafR" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#95d5b2"/>
+      <stop offset="100%" stop-color="#52b788"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="200" height="200" rx="40" fill="url(#bg)"/>
+
+  <!-- ── Barcode ── -->
+
+  <!-- Left guard (full height) -->
+  <rect x="28" y="100" width="3" height="62" fill="white" rx="1"/>
+  <rect x="33" y="100" width="1" height="62" fill="white"/>
+
+  <!-- Left inner bars -->
+  <rect x="37" y="108" width="2" height="54" fill="white" rx="1"/>
+  <rect x="41" y="108" width="3" height="54" fill="white" rx="1"/>
+  <rect x="46" y="108" width="1" height="54" fill="white"/>
+  <rect x="49" y="108" width="2" height="54" fill="white" rx="1"/>
+  <rect x="53" y="108" width="1" height="54" fill="white"/>
+  <rect x="56" y="108" width="3" height="54" fill="white" rx="1"/>
+  <rect x="61" y="108" width="2" height="54" fill="white" rx="1"/>
+  <rect x="65" y="108" width="1" height="54" fill="white"/>
+  <rect x="68" y="108" width="2" height="54" fill="white" rx="1"/>
+  <rect x="72" y="108" width="3" height="54" fill="white" rx="1"/>
+  <rect x="77" y="108" width="1" height="54" fill="white"/>
+  <rect x="80" y="108" width="2" height="54" fill="white" rx="1"/>
+  <rect x="84" y="108" width="1" height="54" fill="white"/>
+  <rect x="87" y="108" width="3" height="54" fill="white" rx="1"/>
+  <rect x="92" y="108" width="2" height="54" fill="white" rx="1"/>
+
+  <!-- Centre guard (full height) -->
+  <rect x="97"  y="100" width="1" height="62" fill="white"/>
+  <rect x="100" y="100" width="1" height="62" fill="white"/>
+  <rect x="103" y="100" width="1" height="62" fill="white"/>
+
+  <!-- Right inner bars -->
+  <rect x="107" y="108" width="2" height="54" fill="white" rx="1"/>
+  <rect x="111" y="108" width="3" height="54" fill="white" rx="1"/>
+  <rect x="116" y="108" width="1" height="54" fill="white"/>
+  <rect x="119" y="108" width="2" height="54" fill="white" rx="1"/>
+  <rect x="123" y="108" width="3" height="54" fill="white" rx="1"/>
+  <rect x="128" y="108" width="1" height="54" fill="white"/>
+  <rect x="131" y="108" width="2" height="54" fill="white" rx="1"/>
+  <rect x="135" y="108" width="1" height="54" fill="white"/>
+  <rect x="138" y="108" width="3" height="54" fill="white" rx="1"/>
+  <rect x="143" y="108" width="2" height="54" fill="white" rx="1"/>
+  <rect x="147" y="108" width="1" height="54" fill="white"/>
+  <rect x="150" y="108" width="2" height="54" fill="white" rx="1"/>
+  <rect x="154" y="108" width="3" height="54" fill="white" rx="1"/>
+  <rect x="159" y="108" width="1" height="54" fill="white"/>
+  <rect x="162" y="108" width="2" height="54" fill="white" rx="1"/>
+
+  <!-- Right guard (full height) -->
+  <rect x="166" y="100" width="1" height="62" fill="white"/>
+  <rect x="169" y="100" width="3" height="62" fill="white" rx="1"/>
+
+  <!-- ── Sprout growing out of the barcode ── -->
+
+  <!-- Stem -->
+  <line x1="100" y1="100" x2="100" y2="40"
+        stroke="#52b788" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Left leaf -->
+  <path d="M100 72 C88 62 70 57 68 44 C82 40 97 53 100 68 Z"
+        fill="url(#leafL)"/>
+  <!-- Left leaf midrib -->
+  <line x1="99" y1="69" x2="70" y2="46"
+        stroke="#2d6a4f" stroke-width="1" stroke-linecap="round" opacity="0.55"/>
+
+  <!-- Right leaf -->
+  <path d="M100 72 C112 62 130 57 132 44 C118 40 103 53 100 68 Z"
+        fill="url(#leafR)"/>
+  <!-- Right leaf midrib -->
+  <line x1="101" y1="69" x2="130" y2="46"
+        stroke="#40916c" stroke-width="1" stroke-linecap="round" opacity="0.55"/>
+</svg>

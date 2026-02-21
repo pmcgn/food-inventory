@@ -109,7 +109,10 @@
 </script>
 
 <div class="page-header">
-  <h1>Inventory</h1>
+  <div class="page-title">
+    <img src="/logo.svg" alt="" class="logo" aria-hidden="true" />
+    <h1>Inventory</h1>
+  </div>
   <span class="item-count">
     {#if searchQuery.trim() && filteredItems.length !== items.length}
       {filteredItems.length} of {items.length}
@@ -264,6 +267,18 @@
 {/if}
 
 <style>
+  .page-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
   .item-count {
     font-size: .85rem;
     color: var(--c-muted);

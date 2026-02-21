@@ -14,10 +14,15 @@ import (
 	"foodinventory/internal/service"
 )
 
+// version is set at build time via -ldflags "-X main.version=<tag>".
+var version = "dev"
+
 //go:embed all:ui
 var staticFiles embed.FS
 
 func main() {
+	log.Printf("foodinventory %s", version)
+
 	ctx := context.Background()
 
 	cfg, err := config.Load()
