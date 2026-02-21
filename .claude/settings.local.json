@@ -4,7 +4,8 @@
       "Bash(yamllint:*)",
       "Bash(go mod tidy:*)",
       "Bash(go build:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(go vet:*)"
     ]
   }
 }

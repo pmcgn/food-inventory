@@ -62,11 +62,16 @@ func (s *InventoryService) Add(
 	ctx context.Context, req model.AddProductRequest,
 ) (*model.InventoryEntry, bool, error) {
 	product, err := s.productSvc.GetOrFetch(ctx, req.EAN)
-	if err != nil {
+	if err != nil && !errors.Is(err, ErrFetchTimeout) {
 		return nil, false, err
 	}
-	if product == nil {
+	if product == nil && !errors.Is(err, ErrFetchTimeout) {
 		return nil, false, ErrProductNotFound
+	}
+	if errors.Is(err, ErrFetchTimeout) {
+		if stubErr := s.productSvc.InsertStub(ctx, req.EAN); stubErr != nil {
+			return nil, false, stubErr
+		}
 	}
 
 	var id int

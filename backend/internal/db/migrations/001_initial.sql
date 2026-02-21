@@ -1,10 +1,13 @@
 -- Product metadata cached from Open Food Facts.
 -- Keyed by EAN so each product is only fetched once from the external API.
+-- resolved = FALSE marks stub rows inserted when the OFF lookup timed out;
+-- they satisfy the FK from inventory but are re-fetched on the next scan.
 CREATE TABLE IF NOT EXISTS products (
     ean       VARCHAR(13) PRIMARY KEY,
-    name      TEXT        NOT NULL,
+    name      TEXT        NOT NULL DEFAULT '',
     category  TEXT,
-    image_url TEXT
+    image_url TEXT,
+    resolved  BOOLEAN     NOT NULL DEFAULT TRUE
 );
 
 -- Current stock levels.

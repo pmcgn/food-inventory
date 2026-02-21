@@ -69,6 +69,10 @@ docker run -p 8080:8080 \
   foodinventory-backend
 ```
 
+### Database migrations
+
+Migration files live in `backend/internal/db/migrations/` and follow the naming pattern `NNN_name.sql` (e.g. `001_initial.sql`). On every startup `RunMigrations` creates the `schema_migrations` table if absent, then applies any migrations whose version number is not yet recorded there — in ascending order, each in its own transaction. To add a schema change, drop a new file with the next version number; it will be applied automatically on the next boot and never re-run.
+
 ### Backend layout
 
 ```

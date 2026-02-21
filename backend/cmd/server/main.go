@@ -14,9 +14,12 @@ import (
 func main() {
 	ctx := context.Background()
 
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("configuration error: %v", err)
+	}
 
-	pool, err := db.NewPool(ctx, cfg.DatabaseURL)
+	pool, err := db.NewPool(ctx, cfg.DatabaseURL, cfg.DBSSLCACert)
 	if err != nil {
 		log.Fatalf("database connection failed: %v", err)
 	}
@@ -26,7 +29,7 @@ func main() {
 		log.Fatalf("migrations failed: %v", err)
 	}
 
-	productSvc := service.NewProductService(pool)
+	productSvc := service.NewProductService(pool, cfg.OFFTimeout)
 	inventorySvc := service.NewInventoryService(pool, productSvc)
 	alertSvc := service.NewAlertService(pool)
 	settingsSvc := service.NewSettingsService(pool)

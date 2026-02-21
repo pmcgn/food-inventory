@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -14,18 +16,25 @@ import (
 
 const openFoodFactsURL = "https://world.openfoodfacts.org/api/v2/product/%s"
 
+// ErrFetchTimeout is returned by GetOrFetch when the Open Food Facts request
+// exceeded the configured timeout. The caller may still add the product to
+// inventory using a stub row; the next scan will retry the lookup.
+var ErrFetchTimeout = errors.New("open food facts request timed out")
+
 // ProductService resolves EAN codes to product metadata,
 // caching results in the local products table.
 type ProductService struct {
-	db *pgxpool.Pool
+	db      *pgxpool.Pool
+	timeout time.Duration
 }
 
-func NewProductService(db *pgxpool.Pool) *ProductService {
-	return &ProductService{db: db}
+func NewProductService(db *pgxpool.Pool, timeout time.Duration) *ProductService {
+	return &ProductService{db: db, timeout: timeout}
 }
 
 // GetOrFetch returns a cached product or fetches it from Open Food Facts.
 // Returns nil, nil when the EAN is unknown in the external API.
+// Returns nil, ErrFetchTimeout when the external request exceeded the timeout.
 func (s *ProductService) GetOrFetch(ctx context.Context, ean string) (*model.Product, error) {
 	p, err := s.getFromDB(ctx, ean)
 	if err != nil {
@@ -35,8 +44,14 @@ func (s *ProductService) GetOrFetch(ctx context.Context, ean string) (*model.Pro
 		return p, nil
 	}
 
-	p, err = fetchFromOpenFoodFacts(ctx, ean)
+	fetchCtx, cancel := context.WithTimeout(ctx, s.timeout)
+	defer cancel()
+
+	p, err = fetchFromOpenFoodFacts(fetchCtx, ean)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) && ctx.Err() == nil {
+			return nil, ErrFetchTimeout
+		}
 		return nil, err
 	}
 	if p == nil {
@@ -49,10 +64,25 @@ func (s *ProductService) GetOrFetch(ctx context.Context, ean string) (*model.Pro
 	return p, nil
 }
 
+// InsertStub inserts a placeholder products row for the given EAN with
+// resolved = FALSE. It is a no-op if any row for that EAN already exists
+// (resolved or stub), preserving a previously cached entry.
+func (s *ProductService) InsertStub(ctx context.Context, ean string) error {
+	_, err := s.db.Exec(ctx,
+		`INSERT INTO products (ean, name, resolved)
+		 VALUES ($1, '', FALSE)
+		 ON CONFLICT (ean) DO NOTHING`,
+		ean,
+	)
+	return err
+}
+
+// getFromDB returns the cached product for ean, or nil if not found / not yet
+// resolved (stub row inserted after a previous timeout).
 func (s *ProductService) getFromDB(ctx context.Context, ean string) (*model.Product, error) {
 	var p model.Product
 	err := s.db.QueryRow(ctx,
-		`SELECT ean, name, category, image_url FROM products WHERE ean = $1`, ean,
+		`SELECT ean, name, category, image_url FROM products WHERE ean = $1 AND resolved = TRUE`, ean,
 	).Scan(&p.EAN, &p.Name, &p.Category, &p.ImageURL)
 	if err == pgx.ErrNoRows {
 		return nil, nil
@@ -65,10 +95,10 @@ func (s *ProductService) getFromDB(ctx context.Context, ean string) (*model.Prod
 
 func (s *ProductService) upsert(ctx context.Context, p *model.Product) error {
 	_, err := s.db.Exec(ctx,
-		`INSERT INTO products (ean, name, category, image_url)
-		 VALUES ($1, $2, $3, $4)
+		`INSERT INTO products (ean, name, category, image_url, resolved)
+		 VALUES ($1, $2, $3, $4, TRUE)
 		 ON CONFLICT (ean) DO UPDATE
-		   SET name = $2, category = $3, image_url = $4`,
+		   SET name = $2, category = $3, image_url = $4, resolved = TRUE`,
 		p.EAN, p.Name, p.Category, p.ImageURL,
 	)
 	return err

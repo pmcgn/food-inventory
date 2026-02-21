@@ -37,6 +37,73 @@ docker stop foodinventory-backend foodinventory-db
 docker rm foodinventory-backend foodinventory-db
 ```
 
+## Configuration
+
+All settings are passed as environment variables.
+
+### Database connection
+
+Two modes are supported. Set **either** `DATABASE_URL` **or** the individual `DB_*` variables.
+
+| Variable | Default | Description |
+|---|---|---|
+| `DATABASE_URL` | — | Full libpq connection string. When set, all `DB_*` variables below are ignored. |
+| `DB_HOST` | `localhost` | Database server hostname or IP |
+| `DB_PORT` | `5432` | Database server port |
+| `DB_USER` | `postgres` | Database user |
+| `DB_PASSWORD` | `postgres` | Database password |
+| `DB_NAME` | `foodinventory` | Database name |
+| `DB_SSL_MODE` | `disable` | TLS mode: `disable` · `require` · `verify-ca` · `verify-full` |
+| `DB_SSL_CA_CERT` | — | PEM-encoded CA certificate, supplied inline. Takes priority over `DB_SSL_CA_CERT_FILE`. |
+| `DB_SSL_CA_CERT_FILE` | — | Path to a PEM CA certificate file (ideal for Kubernetes secret/configmap mounts). Used when `DB_SSL_CA_CERT` is not set. |
+
+When neither CA variable is set the system / container trust store is used.
+
+> **Note:** `DB_SSL_MODE` is only used when building the connection string from `DB_*` variables. When using `DATABASE_URL`, embed `sslmode=` in that string directly. The CA certificate variables are always honoured regardless of which mode is used.
+
+### Server
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `8080` | HTTP listen port |
+
+### Optional settings
+
+| Variable | Default | Description |
+|---|---|---|
+| `PRODUCT_LOOKUP_TIMEOUT_MS` | `500` | Timeout in milliseconds for Open Food Facts product lookup requests. When the request exceeds this limit the product is still added to inventory (with a stub entry); the next scan will retry the lookup. |
+
+### TLS examples (verify-ca with a private CA)
+
+**Inline cert (Docker / shell):**
+
+```bash
+docker run -d --name foodinventory-backend \
+  -e DB_HOST=my-db-host \
+  -e DB_SSL_MODE=verify-ca \
+  -e DB_SSL_CA_CERT="$(cat /path/to/ca.pem)" \
+  -p 8080:8080 \
+  foodinventory-backend
+```
+
+**Mounted file (Kubernetes):**
+
+```yaml
+env:
+  - name: DB_SSL_MODE
+    value: verify-ca
+  - name: DB_SSL_CA_CERT_FILE
+    value: /etc/ssl/db-ca/ca.pem
+volumeMounts:
+  - name: db-ca
+    mountPath: /etc/ssl/db-ca
+    readOnly: true
+volumes:
+  - name: db-ca
+    secret:
+      secretName: db-ca-cert
+```
+
 ## API
 
 The full API is documented in [`docs/openapi.yaml`](docs/openapi.yaml) (OpenAPI 3.1.0).
