@@ -8,7 +8,7 @@ import (
 
 // RegisterAlerts wires the alerts endpoint onto mux.
 func RegisterAlerts(mux *http.ServeMux, svc *service.AlertService) {
-	mux.HandleFunc("GET /alerts", listAlerts(svc))
+	mux.HandleFunc("GET /api/alerts", listAlerts(svc))
 }
 
 func listAlerts(svc *service.AlertService) http.HandlerFunc {

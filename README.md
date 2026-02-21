@@ -4,37 +4,38 @@ Food Inventory is a little warehouse tool for home usage. You can add products t
 
 ## Running with Docker
 
-The backend and database can be started together with Docker Compose.
+A single container serves both the frontend and the API.
 
-**Prerequisites:** Docker and Docker Compose installed.
+**Prerequisites:** Docker installed.
 
 ```powershell
-# 1. Build the backend image
-docker build -t foodinventory-backend ./backend
+# 1. Build the combined image (from the repo root)
+docker build -t foodinventory .
 
-# 2. Start PostgreSQL and the backend
+# 2. Start PostgreSQL
 docker run -d --name foodinventory-db `
   -e POSTGRES_PASSWORD=postgres `
   -e POSTGRES_DB=foodinventory `
   -p 5432:5432 `
   postgres:16
 
-docker run -d --name foodinventory-backend `
+# 3. Start the app
+docker run -d --name foodinventory `
   -e DATABASE_URL=postgres://postgres:postgres@foodinventory-db:5432/foodinventory?sslmode=disable `
   -p 8080:8080 `
   --link foodinventory-db `
-  foodinventory-backend
+  foodinventory
 ```
 
-The API is then available at `http://localhost:8080`.
+The UI is then available at `http://localhost:8080` and the API at `http://localhost:8080/api`.
 
 The database schema is applied automatically on first startup — no manual migration step is needed.
 
 ### Stopping and removing containers
 
 ```powershell
-docker stop foodinventory-backend foodinventory-db
-docker rm foodinventory-backend foodinventory-db
+docker stop foodinventory foodinventory-db
+docker rm foodinventory foodinventory-db
 ```
 
 ## Configuration
@@ -78,12 +79,12 @@ When neither CA variable is set the system / container trust store is used.
 **Inline cert (Docker / shell):**
 
 ```bash
-docker run -d --name foodinventory-backend \
+docker run -d --name foodinventory \
   -e DB_HOST=my-db-host \
   -e DB_SSL_MODE=verify-ca \
   -e DB_SSL_CA_CERT="$(cat /path/to/ca.pem)" \
   -p 8080:8080 \
-  foodinventory-backend
+  foodinventory
 ```
 
 **Mounted file (Kubernetes):**
@@ -104,15 +105,22 @@ volumes:
       secretName: db-ca-cert
 ```
 
+## Development
+
+| | Processes | How |
+|---|---|---|
+| **Development** | 2 — Vite dev server + Go | `npm run dev` + `go run ./cmd/server` |
+| **Production (Docker)** | 1 — Go binary only | `docker build` → Go serves embedded frontend |
+
 ## API
 
 The full API is documented in [`docs/openapi.yaml`](docs/openapi.yaml) (OpenAPI 3.1.0).
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/inventory` | List current stock |
-| `POST` | `/inventory` | Add or increment a product by EAN |
-| `DELETE` | `/inventory/{ean}` | Decrement or remove a product |
-| `GET` | `/alerts` | Active low-stock and expiry alerts |
-| `GET` | `/settings` | Get application settings |
-| `PATCH` | `/settings` | Update application settings |
+| `GET` | `/api/inventory` | List current stock |
+| `POST` | `/api/inventory` | Add or increment a product by EAN |
+| `DELETE` | `/api/inventory/{ean}` | Decrement or remove a product |
+| `GET` | `/api/alerts` | Active low-stock and expiry alerts |
+| `GET` | `/api/settings` | Get application settings |
+| `PATCH` | `/api/settings` | Update application settings |

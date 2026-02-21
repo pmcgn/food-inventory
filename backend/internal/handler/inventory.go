@@ -11,9 +11,9 @@ import (
 
 // RegisterInventory wires inventory endpoints onto mux.
 func RegisterInventory(mux *http.ServeMux, svc *service.InventoryService) {
-	mux.HandleFunc("GET /inventory", listInventory(svc))
-	mux.HandleFunc("POST /inventory", addProduct(svc))
-	mux.HandleFunc("DELETE /inventory/{ean}", removeProduct(svc))
+	mux.HandleFunc("GET /api/inventory", listInventory(svc))
+	mux.HandleFunc("POST /api/inventory", addProduct(svc))
+	mux.HandleFunc("DELETE /api/inventory/{ean}", removeProduct(svc))
 }
 
 func listInventory(svc *service.InventoryService) http.HandlerFunc {

@@ -14,19 +14,19 @@ info:
     ## Core flows
 
     **Add a product**
-    `POST /inventory` → backend resolves EAN (cache or Open Food Facts) → creates
+    `POST /api/inventory` → backend resolves EAN (cache or Open Food Facts) → creates
     or increments the inventory entry.
 
     **Remove a product**
-    `DELETE /inventory/{ean}` → decrements quantity by 1 → deletes the entry when
+    `DELETE /api/inventory/{ean}` → decrements quantity by 1 → deletes the entry when
     quantity reaches 0.
 
     **Alerts**
-    `GET /alerts` → computed on demand from the current inventory; no background
+    `GET /api/alerts` → computed on demand from the current inventory; no background
     jobs required.
 
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8080/api
     description: Local development
 
 tags:

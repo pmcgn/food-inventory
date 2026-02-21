@@ -61,13 +61,17 @@ go run ./cmd/server
 
 ### Building the Docker image
 
+Use the root `Dockerfile` which builds frontend + backend into a single image:
+
 ```bash
-cd backend
-docker build -t foodinventory-backend .
+# from repo root
+docker build -t foodinventory .
 docker run -p 8080:8080 \
   -e DATABASE_URL=postgres://postgres:postgres@host.docker.internal:5432/foodinventory?sslmode=disable \
-  foodinventory-backend
+  foodinventory
 ```
+
+The UI is served at `/` and the API at `/api/`.
 
 ### Database migrations
 
@@ -90,10 +94,11 @@ backend/
 │   │   └── settings.go            # global settings
 │   └── handler/
 │       ├── common.go               # writeJSON / writeError helpers
-│       ├── inventory.go            # GET|POST /inventory, DELETE /inventory/{ean}
-│       ├── alert.go                # GET /alerts
-│       └── settings.go            # GET|PATCH /settings
-├── Dockerfile                      # multi-stage, alpine runtime
+│       ├── inventory.go            # GET|POST /api/inventory, DELETE /api/inventory/{ean}
+│       ├── alert.go                # GET /api/alerts
+│       └── settings.go            # GET|PATCH /api/settings
+├── cmd/server/ui/                  # embedded frontend build (populated by root Dockerfile)
+├── Dockerfile                      # standalone backend only (for backend-only dev)
 └── go.mod                          # module: foodinventory, go 1.22
 ```
 
@@ -102,20 +107,12 @@ backend/
 Source lives in `frontend/`. All commands below run from that directory.
 
 ```bash
-npm run dev      # start dev server (proxies /inventory, /alerts, /settings → localhost:8080)
+npm run dev      # start dev server (proxies /api → localhost:8080)
 npm run build    # production build → frontend/build/
 npm run check    # type-check with svelte-check
 ```
 
-### Building the Docker image
-
-```bash
-cd frontend
-docker build -t foodinventory-frontend .
-docker run -p 80:80 foodinventory-frontend
-```
-
-The nginx container proxies API requests to `foodinventory-backend:8080` (by container name).
+For production, the frontend is embedded into the Go binary via the root `Dockerfile` — no separate frontend container or nginx is needed.
 
 ### Frontend layout
 

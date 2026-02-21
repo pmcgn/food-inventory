@@ -10,8 +10,8 @@ import (
 
 // RegisterSettings wires settings endpoints onto mux.
 func RegisterSettings(mux *http.ServeMux, svc *service.SettingsService) {
-	mux.HandleFunc("GET /settings", getSettings(svc))
-	mux.HandleFunc("PATCH /settings", updateSettings(svc))
+	mux.HandleFunc("GET /api/settings", getSettings(svc))
+	mux.HandleFunc("PATCH /api/settings", updateSettings(svc))
 }
 
 func getSettings(svc *service.SettingsService) http.HandlerFunc {

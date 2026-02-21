@@ -43,22 +43,22 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   inventory: {
     list: () =>
-      request<InventoryEntry[]>('/inventory'),
+      request<InventoryEntry[]>('/api/inventory'),
     add: (ean: string, expiry_date?: string) =>
-      request<InventoryEntry>('/inventory', {
+      request<InventoryEntry>('/api/inventory', {
         method: 'POST',
         body: JSON.stringify({ ean, expiry_date: expiry_date ?? null })
       }),
     remove: (ean: string) =>
-      request<InventoryEntry | null>(`/inventory/${ean}`, { method: 'DELETE' })
+      request<InventoryEntry | null>(`/api/inventory/${ean}`, { method: 'DELETE' })
   },
   alerts: {
-    list: () => request<Alert[]>('/alerts')
+    list: () => request<Alert[]>('/api/alerts')
   },
   settings: {
-    get: () => request<Settings>('/settings'),
+    get: () => request<Settings>('/api/settings'),
     update: (s: Settings) =>
-      request<Settings>('/settings', {
+      request<Settings>('/api/settings', {
         method: 'PATCH',
         body: JSON.stringify(s)
       })

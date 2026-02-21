@@ -1,5 +1,8 @@
 # Go
 backend/vendor/
+# Embedded frontend build (populated by Dockerfile; never commit real build output)
+backend/cmd/server/ui/*
+!backend/cmd/server/ui/.gitkeep
 
 # Node / frontend
 frontend/node_modules/
