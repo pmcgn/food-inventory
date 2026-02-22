@@ -7,12 +7,8 @@
   let items: InventoryEntry[] = [];
   let loading = true;
 
-  // Scanner + add-product modal state
+  // Scanner state
   let scanMode: 'add' | 'remove' | null = null;
-  let showAddModal = false;
-  let scannedEAN = '';
-  let expiryDate = '';
-  let adding = false;
 
   // Remove confirmation state
   let removingEAN: string | null = null;
@@ -51,29 +47,23 @@
     if (mode === 'remove') {
       await removeProduct(ean);
     } else {
-      scannedEAN = ean;
-      expiryDate = '';
-      showAddModal = true;
+      await addProduct(ean);
     }
   }
 
-  async function addProduct() {
-    adding = true;
+  async function addProduct(ean: string) {
     try {
-      await api.inventory.add(scannedEAN, expiryDate || undefined);
-      showAddModal = false;
-      toast.show('Product added to inventory');
+      const entry = await api.inventory.add(ean);
+      toast.show(`Added: ${entry.product.name}`);
       await loadInventory();
+      scanMode = 'add';
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string };
       if (err.code === 'PRODUCT_NOT_FOUND') {
         toast.show('Product not found in the database', 'error');
-        showAddModal = false;
       } else {
         toast.show(err.message ?? 'Failed to add product', 'error');
       }
-    } finally {
-      adding = false;
     }
   }
 
@@ -233,38 +223,6 @@
   <BarcodeScanner on:scan={onScan} on:cancel={() => (scanMode = null)} />
 {/if}
 
-<!-- Add-product bottom sheet -->
-{#if showAddModal}
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <!-- svelte-ignore a11y-no-static-element-interactions -->
-  <div class="overlay" on:click|self={() => (showAddModal = false)}>
-    <div class="sheet">
-      <h2>Add to Inventory</h2>
-
-      <div class="form-group">
-        <label for="ean">EAN code</label>
-        <input id="ean" type="text" value={scannedEAN} readonly />
-      </div>
-
-      <div class="form-group">
-        <label for="expiry">Expiry date <span style="font-weight:400">(optional)</span></label>
-        <input id="expiry" type="date" bind:value={expiryDate} />
-      </div>
-
-      <div style="display:flex; gap:10px; margin-top:8px">
-        <button class="btn btn-ghost" style="flex:1"
-                on:click={() => (showAddModal = false)}>
-          Cancel
-        </button>
-        <button class="btn btn-primary" style="flex:2"
-                on:click={addProduct}
-                disabled={adding}>
-          {adding ? 'Adding…' : 'Add Product'}
-        </button>
-      </div>
-    </div>
-  </div>
-{/if}
 
 <style>
   .page-title {
