@@ -41,11 +41,6 @@ func addProduct(svc *service.InventoryService) http.HandlerFunc {
 		}
 
 		entry, created, err := svc.Add(r.Context(), req)
-		if errors.Is(err, service.ErrProductNotFound) {
-			writeError(w, http.StatusNotFound, "PRODUCT_NOT_FOUND",
-				"No product found for EAN "+req.EAN)
-			return
-		}
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
 			return

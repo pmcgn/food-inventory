@@ -11,10 +11,7 @@ import (
 )
 
 // Sentinel errors mapped to HTTP status codes in the handler layer.
-var (
-	ErrProductNotFound       = errors.New("product not found in external database")
-	ErrInventoryEntryNotFound = errors.New("inventory entry not found")
-)
+var ErrInventoryEntryNotFound = errors.New("inventory entry not found")
 
 // InventoryService manages stock CRUD operations.
 type InventoryService struct {
@@ -65,10 +62,9 @@ func (s *InventoryService) Add(
 	if err != nil && !errors.Is(err, ErrFetchTimeout) {
 		return nil, false, err
 	}
-	if product == nil && !errors.Is(err, ErrFetchTimeout) {
-		return nil, false, ErrProductNotFound
-	}
-	if errors.Is(err, ErrFetchTimeout) {
+	if product == nil {
+		// EAN not found in external API or fetch timed out — insert a stub
+		// row using the EAN as the name with resolved = false.
 		if stubErr := s.productSvc.InsertStub(ctx, req.EAN); stubErr != nil {
 			return nil, false, stubErr
 		}

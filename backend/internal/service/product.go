@@ -65,12 +65,13 @@ func (s *ProductService) GetOrFetch(ctx context.Context, ean string) (*model.Pro
 }
 
 // InsertStub inserts a placeholder products row for the given EAN with
-// resolved = FALSE. It is a no-op if any row for that EAN already exists
-// (resolved or stub), preserving a previously cached entry.
+// resolved = FALSE and the EAN itself as the name. It is a no-op if any row
+// for that EAN already exists (resolved or stub), preserving a previously
+// cached entry.
 func (s *ProductService) InsertStub(ctx context.Context, ean string) error {
 	_, err := s.db.Exec(ctx,
 		`INSERT INTO products (ean, name, resolved)
-		 VALUES ($1, '', FALSE)
+		 VALUES ($1, $1, FALSE)
 		 ON CONFLICT (ean) DO NOTHING`,
 		ean,
 	)
