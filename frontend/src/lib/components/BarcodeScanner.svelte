@@ -158,6 +158,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
     color: #fff;
     font-weight: 600;
     font-size: 1rem;
@@ -172,6 +173,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    touch-action: manipulation;
   }
 
   .viewfinder-wrap {
