@@ -131,9 +131,9 @@
     {:else}
       <!-- Viewfinder frame with corner brackets -->
       <div class="frame">
-        <div class="corner tl" /><div class="corner tr" />
-        <div class="corner bl" /><div class="corner br" />
-        <div class="scan-line" />
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
+        <div class="scan-line"></div>
       </div>
     {/if}
   </div>

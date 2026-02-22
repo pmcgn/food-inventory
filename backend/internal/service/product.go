@@ -71,9 +71,9 @@ func (s *ProductService) GetOrFetch(ctx context.Context, ean string) (*model.Pro
 func (s *ProductService) InsertStub(ctx context.Context, ean string) error {
 	_, err := s.db.Exec(ctx,
 		`INSERT INTO products (ean, name, resolved)
-		 VALUES ($1, $1, FALSE)
+		 VALUES ($1, $2, FALSE)
 		 ON CONFLICT (ean) DO NOTHING`,
-		ean,
+		ean, ean,
 	)
 	return err
 }
