@@ -1,5 +1,5 @@
 # Stage 1: build
-FROM golang:1.22-alpine AS build
+FROM golang:1.26-alpine AS build
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server
 
 # Stage 2: minimal runtime image
-FROM alpine:3.21
+FROM alpine:3.23
 
 RUN apk --no-cache add ca-certificates
 
