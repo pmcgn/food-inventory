@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { api, type Settings } from '$lib/api';
   import { toast } from '$lib/stores/toast';
+  import { theme, themes } from '$lib/stores/theme';
 
   let settings: Settings = { expiry_warning_days: 7 };
   let loading = true;
@@ -44,6 +45,31 @@
 {#if loading}
   <div class="spinner" />
 {:else}
+  <div class="settings-group card">
+    <div class="setting-row">
+      <span class="setting-title">Appearance</span>
+    </div>
+    <div class="theme-grid">
+      {#each themes as t}
+        <button
+          class="theme-card"
+          class:selected={$theme === t.id}
+          on:click={() => theme.set(t.id)}
+          aria-label="Select {t.name} theme"
+          aria-pressed={$theme === t.id}
+        >
+          <div class="theme-swatches">
+            {#each t.swatches as color}
+              <span class="swatch" style="background:{color}"></span>
+            {/each}
+          </div>
+          <span class="theme-name">{t.name}</span>
+          <span class="theme-desc">{t.desc}</span>
+        </button>
+      {/each}
+    </div>
+  </div>
+
   <div class="settings-group card">
     <div class="setting-row">
       <div class="setting-label">
@@ -99,6 +125,60 @@
 <style>
   .settings-group {
     overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .theme-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 0 12px 12px;
+  }
+
+  .theme-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 10px 10px 12px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--c-border);
+    background: var(--c-bg);
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+    text-align: left;
+  }
+  .theme-card:hover {
+    border-color: var(--c-primary);
+  }
+  .theme-card.selected {
+    border-color: var(--c-primary);
+    box-shadow: 0 0 0 2px var(--c-primary);
+  }
+
+  .theme-swatches {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .swatch {
+    flex: 1;
+    height: 20px;
+    border-radius: 4px;
+  }
+
+  .theme-name {
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--c-text);
+    line-height: 1.2;
+  }
+
+  .theme-desc {
+    font-size: .72rem;
+    color: var(--c-muted);
+    line-height: 1.3;
   }
 
   .setting-row {

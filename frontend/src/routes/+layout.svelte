@@ -1,7 +1,11 @@
 <script lang="ts">
   import '../app.css';
+  import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import Toast from '$lib/components/Toast.svelte';
+  import { theme } from '$lib/stores/theme';
+
+  onMount(() => theme.init());
 </script>
 
 <div class="app">
@@ -55,6 +59,8 @@
     border-top: 1px solid var(--c-border);
     display: flex;
     z-index: 20;
+    backdrop-filter: var(--nav-backdrop, none);
+    -webkit-backdrop-filter: var(--nav-backdrop, none);
   }
 
   .nav-item {
