@@ -105,6 +105,16 @@ func (s *ProductService) upsert(ctx context.Context, p *model.Product) error {
 	return err
 }
 
+// UpdateProduct sets a user-provided name and category on a product row and
+// marks it as resolved = TRUE. This allows manual naming of unknown products.
+func (s *ProductService) UpdateProduct(ctx context.Context, ean, name string, category *string) error {
+	_, err := s.db.Exec(ctx,
+		`UPDATE products SET name = $2, category = $3, resolved = TRUE WHERE ean = $1`,
+		ean, name, category,
+	)
+	return err
+}
+
 // offResponse maps the subset of the Open Food Facts API response we need.
 type offResponse struct {
 	Status  int `json:"status"`

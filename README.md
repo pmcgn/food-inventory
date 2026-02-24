@@ -109,7 +109,7 @@ volumes:
 
 | | Processes | How |
 |---|---|---|
-| **Development** | 2 — Vite dev server + Go | `npm run dev` + `go run ./cmd/server` |
+| **Development** | 2 — Vite dev server + Go | `npm run dev -- --host` + `go run ./cmd/server` |
 | **Production (Docker)** | 1 — Go binary only | `docker build` → Go serves embedded frontend |
 
 ## API

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { api, type InventoryEntry } from '$lib/api';
   import { toast } from '$lib/stores/toast';
   import BarcodeScanner from '$lib/components/BarcodeScanner.svelte';
@@ -15,6 +15,13 @@
 
   // Search
   let searchQuery = '';
+
+  // Unknown-product popup state
+  let unknownPopupEAN: string | null = null;
+  let unknownName = '';
+  let unknownCategory = '';
+  let timerActive = false;
+  let skipTimer: ReturnType<typeof setTimeout> | null = null;
 
   $: filteredItems = searchQuery.trim()
     ? items.filter(e => {
@@ -54,9 +61,13 @@
   async function addProduct(ean: string) {
     try {
       const entry = await api.inventory.add(ean);
-      toast.show(`Added: ${entry.product.name}`);
       await loadInventory();
-      scanMode = 'add';
+      if (!entry.product.resolved) {
+        openUnknownPopup(entry.product.ean);
+      } else {
+        toast.show(`Added: ${entry.product.name}`);
+        scanMode = 'add';
+      }
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string };
       if (err.code === 'PRODUCT_NOT_FOUND') {
@@ -66,6 +77,48 @@
       }
     }
   }
+
+  function openUnknownPopup(ean: string) {
+    unknownPopupEAN = ean;
+    unknownName = '';
+    unknownCategory = '';
+    timerActive = true;
+    skipTimer = setTimeout(handleSkip, 2000);
+  }
+
+  function stopTimer() {
+    if (skipTimer !== null) { clearTimeout(skipTimer); skipTimer = null; }
+    timerActive = false;
+  }
+
+  function onInputFocus() {
+    stopTimer();
+  }
+
+  function handleSkip() {
+    stopTimer();
+    unknownPopupEAN = null;
+    scanMode = 'add';
+  }
+
+  async function handleConfirm() {
+    if (!unknownPopupEAN || !unknownName.trim()) return;
+    stopTimer();
+    const ean = unknownPopupEAN;
+    const name = unknownName.trim();
+    const category = unknownCategory.trim() || null;
+    unknownPopupEAN = null;
+    try {
+      await api.products.update(ean, { name, category });
+      toast.show(`Product saved: ${name}`);
+      await loadInventory();
+    } catch {
+      toast.show('Failed to save product name', 'error');
+    }
+    scanMode = 'add';
+  }
+
+  onDestroy(() => { if (skipTimer !== null) clearTimeout(skipTimer); });
 
   async function removeProduct(ean: string) {
     removingEAN = ean;
@@ -217,6 +270,58 @@
     </svg>
   </button>
 </div>
+
+<!-- Unknown product popup -->
+{#if unknownPopupEAN !== null}
+  <div class="popup-overlay" role="dialog" aria-modal="true" aria-label="Unknown product">
+    <div class="popup-card">
+      <h2 class="popup-title">Unknown Product</h2>
+      <p class="popup-ean">EAN: {unknownPopupEAN}</p>
+
+      <div class="popup-fields">
+        <label class="popup-label">
+          Name
+          <input
+            class="popup-input"
+            type="text"
+            placeholder="Product name"
+            bind:value={unknownName}
+            on:focus={onInputFocus}
+            autocomplete="off"
+          />
+        </label>
+        <label class="popup-label">
+          Category
+          <input
+            class="popup-input"
+            type="text"
+            placeholder="e.g. dairy, snacks, beverages…"
+            bind:value={unknownCategory}
+            on:focus={onInputFocus}
+            autocomplete="off"
+          />
+        </label>
+      </div>
+
+      <div class="popup-actions">
+        <button
+          class="popup-btn popup-btn--confirm"
+          on:click={handleConfirm}
+          disabled={!unknownName.trim()}
+        >
+          Confirm
+        </button>
+        <button
+          class="popup-btn popup-btn--skip"
+          class:timer-active={timerActive}
+          on:click={handleSkip}
+        >
+          Skip
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <!-- Barcode scanner overlay -->
 {#if scanMode !== null}
@@ -397,4 +502,127 @@
 
   .scan-btn--add    { background: #4caf50; }
   .scan-btn--remove { background: #f44336; }
+
+  /* ── Unknown product popup ── */
+  .popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 16px;
+  }
+
+  .popup-card {
+    background: var(--c-surface, #fff);
+    border-radius: 18px;
+    padding: 24px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  .popup-title {
+    margin: 0 0 4px;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .popup-ean {
+    margin: 0 0 18px;
+    font-size: .78rem;
+    color: var(--c-muted);
+    font-family: monospace;
+    letter-spacing: .04em;
+  }
+
+  .popup-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .popup-label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--c-muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+
+  .popup-input {
+    padding: 10px 12px;
+    border-radius: 9px;
+    border: 1px solid var(--c-border, #e0e0e0);
+    background: var(--c-bg, #f9f9f9);
+    font-size: .95rem;
+    color: var(--c-text, #111);
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .popup-input:focus {
+    outline: none;
+    border-color: var(--c-primary, #4caf50);
+    background: var(--c-surface, #fff);
+  }
+
+  .popup-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .popup-btn {
+    flex: 1;
+    padding: 13px 10px;
+    border-radius: 11px;
+    font-weight: 700;
+    font-size: .95rem;
+    cursor: pointer;
+    border: none;
+    transition: filter .15s;
+  }
+  .popup-btn:hover { filter: brightness(1.08); }
+
+  .popup-btn--confirm {
+    background: var(--c-primary, #4caf50);
+    color: #fff;
+  }
+  .popup-btn--confirm:disabled {
+    opacity: .4;
+    cursor: default;
+    filter: none;
+  }
+
+  /* Skip button with draining progress-bar background */
+  .popup-btn--skip {
+    background: var(--c-bg, #f0f0f0);
+    color: var(--c-text, #333);
+    border: 1px solid var(--c-border, #ddd);
+    position: relative;
+    overflow: hidden;
+  }
+  /* The bar sits behind the label text */
+  .popup-btn--skip::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.10);
+    transform-origin: left center;
+    transform: scaleX(0);
+  }
+  /* Animate only while the timer is running */
+  .popup-btn--skip.timer-active::before {
+    animation: drain 2s linear forwards;
+  }
+
+  @keyframes drain {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+  }
 </style>

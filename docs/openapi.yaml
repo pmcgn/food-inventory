@@ -32,6 +32,8 @@ servers:
 tags:
   - name: inventory
     description: Manage the current stock of products
+  - name: products
+    description: Update product metadata (name, category) for unresolved stubs
   - name: alerts
     description: Active low-stock and expiry warnings (read-only, computed on demand)
   - name: settings
@@ -155,6 +157,52 @@ paths:
                 message: No inventory entry for EAN 4006381333931
 
   # ---------------------------------------------------------------------------
+  # Products
+  # ---------------------------------------------------------------------------
+
+  /products/{ean}:
+    patch:
+      tags: [products]
+      summary: Update product name and category
+      description: |
+        Sets a user-provided name and category on a product stub (one that was
+        inserted automatically when the EAN could not be resolved from Open Food
+        Facts). Also marks the product as `resolved = true` so that the
+        unknown-product popup will not appear again on subsequent scans.
+
+        Requires a non-empty `name`. `category` is optional.
+      operationId: updateProduct
+      parameters:
+        - $ref: '#/components/parameters/EanPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+            example:
+              name: My Mystery Snack
+              category: snacks
+      responses:
+        '204':
+          description: Product updated successfully
+        '400':
+          description: Malformed request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Invalid EAN format or empty name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: INVALID_EAN
+                message: EAN must be 8 or 13 digits
+
+  # ---------------------------------------------------------------------------
   # Alerts
   # ---------------------------------------------------------------------------
 
@@ -264,7 +312,7 @@ components:
     Product:
       type: object
       description: Product metadata resolved from Open Food Facts and cached locally
-      required: [ean, name]
+      required: [ean, name, resolved]
       properties:
         ean:
           $ref: '#/components/schemas/EAN'
@@ -279,6 +327,13 @@ components:
           type: [string, 'null']
           format: uri
           example: https://images.openfoodfacts.org/images/products/400/638/133/3931/front_en.jpg
+        resolved:
+          type: boolean
+          description: |
+            `false` when the product metadata could not be fetched from Open
+            Food Facts (stub row). The frontend shows an edit popup when this
+            is `false` so the user can supply a name and category manually.
+          example: true
 
     InventoryEntry:
       type: object
@@ -306,6 +361,19 @@ components:
           default: 1
           description: Quantity at or below which a low_stock alert is triggered
           example: 2
+
+    UpdateProductRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: User-supplied product name (must not be empty)
+          example: My Mystery Snack
+        category:
+          type: [string, 'null']
+          description: User-supplied category (optional)
+          example: snacks
 
     AddProductRequest:
       type: object

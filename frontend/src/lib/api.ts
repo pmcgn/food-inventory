@@ -3,6 +3,7 @@ export interface Product {
   name: string;
   category: string | null;
   image_url: string | null;
+  resolved: boolean;
 }
 
 export interface InventoryEntry {
@@ -51,6 +52,13 @@ export const api = {
       }),
     remove: (ean: string) =>
       request<InventoryEntry | null>(`/api/inventory/${ean}`, { method: 'DELETE' })
+  },
+  products: {
+    update: (ean: string, data: { name: string; category?: string | null }) =>
+      request<void>(`/api/products/${ean}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data)
+      })
   },
   alerts: {
     list: () => request<Alert[]>('/api/alerts')

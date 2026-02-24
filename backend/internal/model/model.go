@@ -6,6 +6,7 @@ type Product struct {
 	Name     string  `json:"name"`
 	Category *string `json:"category"`
 	ImageURL *string `json:"image_url"`
+	Resolved bool    `json:"resolved"`
 }
 
 // InventoryEntry is one product line in the current stock.
@@ -21,6 +22,12 @@ type InventoryEntry struct {
 type AddProductRequest struct {
 	EAN        string  `json:"ean"`
 	ExpiryDate *string `json:"expiry_date"`
+}
+
+// UpdateProductRequest is the body for PATCH /products/{ean}.
+type UpdateProductRequest struct {
+	Name     string  `json:"name"`
+	Category *string `json:"category"`
 }
 
 // AlertType classifies an alert.

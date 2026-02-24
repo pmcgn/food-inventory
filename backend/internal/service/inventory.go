@@ -29,7 +29,7 @@ func (s *InventoryService) List(ctx context.Context) ([]model.InventoryEntry, er
 		SELECT i.id, i.quantity,
 		       TO_CHAR(i.expiry_date, 'YYYY-MM-DD'),
 		       i.low_stock_threshold,
-		       p.ean, p.name, p.category, p.image_url
+		       p.ean, p.name, p.category, p.image_url, p.resolved
 		FROM inventory i
 		JOIN products p ON p.ean = i.ean
 		ORDER BY p.name`,
@@ -44,7 +44,7 @@ func (s *InventoryService) List(ctx context.Context) ([]model.InventoryEntry, er
 		var e model.InventoryEntry
 		if err := rows.Scan(
 			&e.ID, &e.Quantity, &e.ExpiryDate, &e.LowStockThreshold,
-			&e.Product.EAN, &e.Product.Name, &e.Product.Category, &e.Product.ImageURL,
+			&e.Product.EAN, &e.Product.Name, &e.Product.Category, &e.Product.ImageURL, &e.Product.Resolved,
 		); err != nil {
 			return nil, err
 		}
@@ -138,13 +138,13 @@ func (s *InventoryService) getByID(ctx context.Context, id int) (*model.Inventor
 		SELECT i.id, i.quantity,
 		       TO_CHAR(i.expiry_date, 'YYYY-MM-DD'),
 		       i.low_stock_threshold,
-		       p.ean, p.name, p.category, p.image_url
+		       p.ean, p.name, p.category, p.image_url, p.resolved
 		FROM inventory i
 		JOIN products p ON p.ean = i.ean
 		WHERE i.id = $1`, id,
 	).Scan(
 		&e.ID, &e.Quantity, &e.ExpiryDate, &e.LowStockThreshold,
-		&e.Product.EAN, &e.Product.Name, &e.Product.Category, &e.Product.ImageURL,
+		&e.Product.EAN, &e.Product.Name, &e.Product.Category, &e.Product.ImageURL, &e.Product.Resolved,
 	)
 	if err != nil {
 		return nil, err

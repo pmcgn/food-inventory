@@ -47,6 +47,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	handler.RegisterInventory(mux, inventorySvc)
+	handler.RegisterProduct(mux, productSvc)
 	handler.RegisterAlerts(mux, alertSvc)
 	handler.RegisterSettings(mux, settingsSvc)
 
