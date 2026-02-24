@@ -30,6 +30,8 @@ servers:
     description: Local development
 
 tags:
+  - name: health
+    description: Liveness and readiness probes (no authentication required)
   - name: inventory
     description: Manage the current stock of products
   - name: products
@@ -40,6 +42,59 @@ tags:
     description: Global application settings
 
 paths:
+
+  # ---------------------------------------------------------------------------
+  # Health
+  # ---------------------------------------------------------------------------
+
+  /health:
+    get:
+      tags: [health]
+      summary: Liveness probe
+      description: |
+        Returns `200 OK` as long as the server process is running.
+        Use this endpoint to verify that the application has started and
+        is able to accept HTTP requests (e.g. Kubernetes `livenessProbe`).
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Server is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: ok
+
+  /ready:
+    get:
+      tags: [health]
+      summary: Readiness probe
+      description: |
+        Returns `200 OK` when the server is ready to handle traffic — i.e.
+        when it can successfully reach the PostgreSQL database.
+        Returns `503 Service Unavailable` when the database is unreachable.
+        Use this endpoint to gate traffic until the application is fully
+        initialised (e.g. Kubernetes `readinessProbe`).
+      operationId: readinessCheck
+      responses:
+        '200':
+          description: Server is ready — database connection is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: ok
+        '503':
+          description: Server is not ready — database is unreachable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: DB_UNAVAILABLE
+                message: database is not reachable
 
   # ---------------------------------------------------------------------------
   # Inventory
@@ -300,6 +355,15 @@ components:
         $ref: '#/components/schemas/EAN'
 
   schemas:
+
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+          example: ok
 
     EAN:
       type: string

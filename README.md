@@ -118,6 +118,8 @@ The full API is documented in [`docs/openapi.yaml`](docs/openapi.yaml) (OpenAPI 
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| `GET` | `/api/health` | Liveness probe — `200 OK` while the process is running |
+| `GET` | `/api/ready` | Readiness probe — `200 OK` when the database is reachable, `503` otherwise |
 | `GET` | `/api/inventory` | List current stock |
 | `POST` | `/api/inventory` | Add or increment a product by EAN |
 | `DELETE` | `/api/inventory/{ean}` | Decrement or remove a product |

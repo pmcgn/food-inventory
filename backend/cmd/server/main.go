@@ -46,6 +46,7 @@ func main() {
 	settingsSvc := service.NewSettingsService(pool)
 
 	mux := http.NewServeMux()
+	handler.RegisterHealth(mux, pool)
 	handler.RegisterInventory(mux, inventorySvc)
 	handler.RegisterProduct(mux, productSvc)
 	handler.RegisterAlerts(mux, alertSvc)
