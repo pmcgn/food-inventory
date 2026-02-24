@@ -12,6 +12,7 @@
 
   // Remove confirmation state
   let removingEAN: string | null = null;
+  let addingEAN: string | null = null;
 
   // Search
   let searchQuery = '';
@@ -33,6 +34,9 @@
         );
       })
     : items;
+
+  $: totalUnits    = items.reduce((s, e) => s + e.quantity, 0);
+  $: filteredUnits = filteredItems.reduce((s, e) => s + e.quantity, 0);
 
   onMount(loadInventory);
 
@@ -134,6 +138,19 @@
     }
   }
 
+  async function incrementProduct(ean: string) {
+    addingEAN = ean;
+    try {
+      await api.inventory.add(ean);
+      await loadInventory();
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      toast.show(err.message ?? 'Failed to add product', 'error');
+    } finally {
+      addingEAN = null;
+    }
+  }
+
   function formatCategory(cat: string | null): string {
     if (!cat) return '';
     return cat.replace(/^en:/, '').replace(/-/g, ' ');
@@ -156,14 +173,15 @@
     <img src="/logo.svg" alt="" class="logo" aria-hidden="true" />
     <h1>Inventory</h1>
   </div>
-  <span class="item-count">
+  <div class="inventory-stats">
     {#if searchQuery.trim() && filteredItems.length !== items.length}
-      {filteredItems.length} of {items.length}
+      <span class="stat"><strong>{filteredItems.length}</strong> of {items.length} products</span>
+      <span class="stat"><strong>{filteredUnits}</strong> of {totalUnits} units</span>
     {:else}
-      {items.length}
+      <span class="stat"><strong>{items.length}</strong> product{items.length !== 1 ? 's' : ''}</span>
+      <span class="stat"><strong>{totalUnits}</strong> unit{totalUnits !== 1 ? 's' : ''}</span>
     {/if}
-    item{items.length !== 1 ? 's' : ''}
-  </span>
+  </div>
 </div>
 
 <div class="search-wrap">
@@ -208,7 +226,7 @@
             <img src={entry.product.image_url} alt={entry.product.name} loading="lazy" />
           {:else}
             <div class="img-placeholder">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="1.5">
                 <rect x="3" y="3" width="18" height="18" rx="2"/>
                 <path d="M3 9h18M9 21V9"/>
@@ -235,11 +253,22 @@
           </div>
         </div>
 
-        <!-- Quantity + remove -->
+        <!-- Quantity stepper -->
         <div class="item-actions">
+          <button
+            class="stepper-btn stepper-btn--add"
+            on:click={() => incrementProduct(entry.product.ean)}
+            disabled={addingEAN === entry.product.ean}
+            aria-label="Add one {entry.product.name}"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+          </button>
           <div class="qty-display">{entry.quantity}</div>
           <button
-            class="remove-btn"
+            class="stepper-btn stepper-btn--remove"
             on:click={() => removeProduct(entry.product.ean)}
             disabled={removingEAN === entry.product.ean}
             aria-label="Remove one {entry.product.name}"
@@ -342,10 +371,20 @@
     flex-shrink: 0;
   }
 
-  .item-count {
-    font-size: .85rem;
+  .inventory-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+  }
+  .stat {
+    font-size: .75rem;
     color: var(--c-muted);
-    font-weight: 500;
+    font-weight: 400;
+  }
+  .stat strong {
+    font-weight: 700;
+    color: var(--c-text);
   }
 
   .search-wrap {
@@ -378,15 +417,15 @@
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
     margin-bottom: 80px;
   }
 
   .item-card {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px;
+    gap: 10px;
+    padding: 8px 10px;
     border-left: 3px solid transparent;
     transition: border-color .2s;
   }
@@ -394,9 +433,9 @@
   .warn-expiry { border-left-color: var(--c-warning); }
 
   .item-img {
-    width: 56px;
-    height: 56px;
-    border-radius: 10px;
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
     overflow: hidden;
     flex-shrink: 0;
     background: var(--c-bg);
@@ -417,13 +456,13 @@
   }
   .item-name {
     font-weight: 600;
-    font-size: .95rem;
+    font-size: .88rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .item-category {
-    font-size: .78rem;
+    font-size: .72rem;
     color: var(--c-muted);
     text-transform: capitalize;
     margin-top: 1px;
@@ -431,8 +470,8 @@
   .item-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 5px;
+    gap: 3px;
+    margin-top: 3px;
   }
 
   .badge {
@@ -452,28 +491,40 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 2px;
     flex-shrink: 0;
   }
   .qty-display {
-    font-size: 1.15rem;
+    font-size: 1rem;
     font-weight: 700;
-    min-width: 28px;
+    min-width: 24px;
     text-align: center;
+    line-height: 1.4;
   }
-  .remove-btn {
-    width: 32px;
-    height: 32px;
+  .stepper-btn {
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
-    background: var(--c-danger-bg);
-    color: var(--c-danger);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background .15s;
+    transition: background .15s, transform .1s;
+    flex-shrink: 0;
   }
-  .remove-btn:hover   { background: var(--c-danger); color: #fff; }
-  .remove-btn:disabled { opacity: .4; pointer-events: none; }
+  .stepper-btn:active { transform: scale(.88); }
+  .stepper-btn:disabled { opacity: .35; pointer-events: none; }
+
+  .stepper-btn--add {
+    background: var(--c-primary-bg, #e8f5e9);
+    color: var(--c-primary, #4caf50);
+  }
+  .stepper-btn--add:hover { background: var(--c-primary, #4caf50); color: #fff; }
+
+  .stepper-btn--remove {
+    background: var(--c-danger-bg);
+    color: var(--c-danger);
+  }
+  .stepper-btn--remove:hover { background: var(--c-danger); color: #fff; }
 
   .scan-actions {
     position: fixed;
