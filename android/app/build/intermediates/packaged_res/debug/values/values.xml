@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="background">#121212</color>
+    <color name="cardBackground">#1E1E1E</color>
+    <color name="colorAdd">#2E7D32</color>
+    <color name="colorRemove">#C62828</color>
+    <color name="textPrimary">#EFEFEF</color>
+    <color name="textSecondary">#9E9E9E</color>
+    <color name="white">#FFFFFF</color>
+    <string name="app_name">Food Inventory</string>
+    <string name="btn_add">ADD</string>
+    <string name="btn_remove">REMOVE</string>
+    <string name="cancel">Cancel</string>
+    <string name="expiry_label">Expiry: %s</string>
+    <string name="msg_removed">Removed last item of EAN %s</string>
+    <string name="product_image_desc">Product image</string>
+    <string name="qty_label">Quantity: %d</string>
+    <string name="save">Save</string>
+    <string name="settings_title">Backend Settings</string>
+    <string name="settings_url_label">Backend URL (e.g. http://192.168.1.10:8080)</string>
+    <string name="status_add">Scan a barcode to ADD an item</string>
+    <string name="status_remove">Scan a barcode to REMOVE an item</string>
+    <string name="unknown_product">Unknown Product</string>
+    <style name="Theme.FoodInventory" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#2E7D32</item>
+        <item name="colorPrimaryVariant">#1B5E20</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSurface">@color/cardBackground</item>
+        <item name="android:windowBackground">@color/background</item>
+        <item name="android:textColorPrimary">@color/textPrimary</item>
+        <item name="android:textColorSecondary">@color/textSecondary</item>
+    </style>
+</resources>

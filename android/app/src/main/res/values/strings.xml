@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Food Inventory</string>
+    <string name="btn_add">ADD</string>
+    <string name="btn_remove">REMOVE</string>
+    <string name="settings_title">Backend Settings</string>
+    <string name="settings_url_label">Backend URL (e.g. http://192.168.1.10:8080)</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="status_add">Scan a barcode to ADD an item</string>
+    <string name="status_remove">Scan a barcode to REMOVE an item</string>
+    <string name="unknown_product">Unknown Product</string>
+    <string name="product_image_desc">Product image</string>
+    <string name="qty_label">Quantity: %d</string>
+    <string name="expiry_label">Expiry: %s</string>
+    <string name="msg_removed">Removed last item of EAN %s</string>
+</resources>
