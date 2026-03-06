@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -30,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
     private MainViewModel viewModel;
     private SharedPreferences prefs;
     private CountDownTimer addModeTimer;
+    private final Handler cardHideHandler = new Handler(Looper.getMainLooper());
+    private final Runnable cardHideRunnable = () -> binding.cardProduct.setVisibility(View.GONE);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,6 +98,7 @@ public class MainActivity extends AppCompatActivity {
             binding.tvStatus.setText(R.string.status_remove);
         }
         // Clear last result when switching modes
+        cardHideHandler.removeCallbacks(cardHideRunnable);
         binding.cardProduct.setVisibility(View.GONE);
     }
 
@@ -125,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
         if (addModeTimer != null) {
             addModeTimer.cancel();
         }
+        cardHideHandler.removeCallbacks(cardHideRunnable);
     }
 
     private void setupHidInput() {
@@ -194,6 +200,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void showProduct(InventoryEntry entry) {
         binding.cardProduct.setVisibility(View.VISIBLE);
+        cardHideHandler.removeCallbacks(cardHideRunnable);
+        cardHideHandler.postDelayed(cardHideRunnable, 5_000);
 
         String name = entry.product != null ? entry.product.name : getString(R.string.unknown_product);
         binding.tvProductName.setText(name);

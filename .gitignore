@@ -84,4 +84,4 @@ obj/
 *.ipr
 *~
 *.swp
-android/app/build
+android/app/build/
