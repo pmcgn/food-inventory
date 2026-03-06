@@ -1,25 +1,221 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:layout_height="wrap_content">
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:text="@string/settings_url_label"
-        android:textSize="14sp" />
+        android:orientation="vertical"
+        android:padding="24dp">
 
-    <EditText
-        android:id="@+id/etBackendUrl"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="http://192.168.1.x:8080"
-        android:importantForAutofill="no"
-        android:inputType="textUri"
-        android:singleLine="true" />
+        <!-- ── Backend ─────────────────────────────────────────────────────── -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/settings_section_backend"
+            android:textAllCaps="true"
+            android:textColor="@color/textSecondary"
+            android:textSize="11sp"
+            android:letterSpacing="0.1" />
 
-</LinearLayout>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:text="@string/settings_url_label"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/etBackendUrl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="http://192.168.1.x:8080"
+            android:importantForAutofill="no"
+            android:inputType="textUri"
+            android:singleLine="true" />
+
+        <!-- ── Divider ───────────────────────────────────────────────────── -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="16dp"
+            android:background="#2A2A2A" />
+
+        <!-- ── MQTT header + enable toggle ──────────────────────────────── -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/settings_section_mqtt"
+                android:textAllCaps="true"
+                android:textColor="@color/textSecondary"
+                android:textSize="11sp"
+                android:letterSpacing="0.1" />
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/swMqttEnabled"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
+
+        <!-- ── MQTT fields (collapsed when disabled) ─────────────────────── -->
+        <LinearLayout
+            android:id="@+id/layoutMqttFields"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <!-- Host -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:text="@string/mqtt_host_label"
+                android:textSize="14sp" />
+
+            <EditText
+                android:id="@+id/etMqttHost"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="192.168.1.x"
+                android:importantForAutofill="no"
+                android:inputType="textUri"
+                android:singleLine="true" />
+
+            <!-- Port -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="6dp"
+                android:text="@string/mqtt_port_label"
+                android:textSize="14sp" />
+
+            <EditText
+                android:id="@+id/etMqttPort"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="1883"
+                android:importantForAutofill="no"
+                android:inputType="number"
+                android:singleLine="true" />
+
+            <!-- TLS toggle -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:layout_marginTop="14dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/mqtt_tls_label"
+                    android:textSize="14sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/swMqttTls"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
+
+            <!-- Skip cert validation (only shown when TLS on) -->
+            <LinearLayout
+                android:id="@+id/layoutSkipCert"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp"
+                android:paddingStart="16dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/mqtt_skip_cert_label"
+                    android:textSize="13sp"
+                    android:textColor="@color/textSecondary" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/swMqttSkipCert"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
+
+            <!-- Username -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:layout_marginBottom="6dp"
+                android:text="@string/mqtt_username_label"
+                android:textSize="14sp" />
+
+            <EditText
+                android:id="@+id/etMqttUsername"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/mqtt_optional_hint"
+                android:importantForAutofill="no"
+                android:inputType="text"
+                android:singleLine="true" />
+
+            <!-- Password -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="6dp"
+                android:text="@string/mqtt_password_label"
+                android:textSize="14sp" />
+
+            <EditText
+                android:id="@+id/etMqttPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/mqtt_optional_hint"
+                android:importantForAutofill="no"
+                android:inputType="textPassword"
+                android:singleLine="true" />
+
+            <!-- Topic prefix -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:layout_marginBottom="6dp"
+                android:text="@string/mqtt_topic_prefix_label"
+                android:textSize="14sp" />
+
+            <EditText
+                android:id="@+id/etMqttTopicPrefix"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="foodinventory/"
+                android:importantForAutofill="no"
+                android:inputType="text"
+                android:singleLine="true" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

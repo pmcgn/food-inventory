@@ -105,6 +105,60 @@ volumes:
       secretName: db-ca-cert
 ```
 
+## Android app — MQTT smart home integration
+
+The Android companion app can publish scan events and receive screen-control commands via MQTT. All settings are optional and configured inside the app under **Settings → MQTT Smart Home**.
+
+### Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Enabled | off | Master switch; no connection is made when disabled |
+| Broker host / IP | — | Hostname or IP address of the MQTT broker |
+| Port | 1883 / 8883 | Port to connect on; defaults to 1883 (plain) or 8883 (TLS) |
+| Use TLS / SSL | off | Encrypt the connection with TLS |
+| Skip certificate validation | off | Accept any server certificate (useful with self-signed CAs); only available when TLS is on |
+| Username / Password | — | Broker credentials; leave blank if the broker allows anonymous access |
+| Topic prefix | `foodinventory/` | Prepended to every topic name |
+
+### Topics
+
+All topic names below use the default prefix `foodinventory/`. Substitute your configured prefix if you changed it.
+
+#### Published by the app
+
+| Topic | Retained | Payload | When |
+|-------|----------|---------|------|
+| `foodinventory/status` | yes | `online` | On successful connection |
+| `foodinventory/status` | yes | `offline` | On graceful shutdown (synchronous, delivered before disconnect) |
+| `foodinventory/status` | yes | `offline` | Last Will — sent by broker if the connection drops unexpectedly |
+| `foodinventory/scan/add` | no | EAN string | After a product is successfully added to inventory |
+| `foodinventory/scan/remove` | no | EAN string | After a product is successfully removed from inventory |
+
+Use `foodinventory/scan/add` and `foodinventory/scan/remove` to trigger smarthome actions such as flashing a green or red indicator lamp to confirm the scan.
+
+#### Subscribed by the app
+
+| Topic | Payload | Effect |
+|-------|---------|--------|
+| `foodinventory/screen` | `on` | Turns the screen on and re-applies keep-screen-on |
+| `foodinventory/screen` | `off` | Releases keep-screen-on (screen dims/turns off at next OS timeout); a CPU wake lock and WiFi lock are held so the app stays reachable to receive the `on` command |
+
+Payload matching is case-insensitive (`ON`, `Off`, etc. all work).
+
+### Example (mosquitto_pub)
+
+```bash
+# Turn screen off
+mosquitto_pub -h 192.168.1.x -t "foodinventory/screen" -m "off"
+
+# Turn screen on
+mosquitto_pub -h 192.168.1.x -t "foodinventory/screen" -m "on"
+
+# Watch all app events
+mosquitto_sub -h 192.168.1.x -t "foodinventory/#" -v
+```
+
 ## Development
 
 | | Processes | How |
